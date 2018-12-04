@@ -14,10 +14,11 @@ print(" [*] listen %s:%d" % (bind_ip, bind_port))
 
 def handle_client(client_socket):
     bufsize = 1024
-    request = client_socket.recv(bufsize)
-    print('[*] recv: %s' % request)
-    client_socket.send("Hey Client!\n")
-    client_socket.close()
+    while True:
+        request = client_socket.recv(bufsize)
+        print('[*] recv: %s' % request)
+    #client_socket.send("Hey Client!\n")
+    #client_socket.close()
 
 while True:
     client, addr = server.accept()
