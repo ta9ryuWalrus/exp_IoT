@@ -58,27 +58,55 @@ void setup(){
 }
 
 void loop(){
+    delay(3000);
     display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
     display.clearDisplay();
     display.setTextSize(1);
     display.setTextColor(WHITE);
     display.setCursor(0, 0);
+    display.display();
+
     unsigned long t = now();
-    if(t/300 != last_sync_time/30){
+    if(t/30 != last_sync_time/30){
+
+        //同期
         syncNTPtime(ntp_server);
         last_sync_time = t;
-        
+
+        //messageの作成
         int dip = getDIPSWStatus();
         int illumi = getIlluminance();
         int md = 0;
         if(getMDStatus()){
             md = 1;
         }
-
         char message[60];
         sprintf(message, "%d,%04d-%02d-%02dT%02d:%02d:%02d,%d,%d",
             dip, year(t), month(t), day(t), hour(t), minute(t), second(t), illumi, md);
         display.println(message);
+        display.display();
+
+        //サーバへの接続
+        WiFiClient client;
+        if(!client.connect(host, port)){
+            display.println("...ERR");
+            display.println();
+            display.display();
+            return;
+        }
+        client.print(message);
+        char* recv = client.read();
+        if(recv == "OK"){
+            display.println("...OK");
+            display.println();
+        }else if(recv == "ERROR"){
+            display.println("...NG");
+            display.println();
+        }else if(!client.connected()){
+            display.println("...ERR");
+            display.println();
+        }
+        client.stop();
     }
 }
 
