@@ -19,9 +19,9 @@ def handle_client(client_socket):
     bufsize = 1024
     
     request = client_socket.recv(bufsize)
+    request = request.decode('utf-8')
     req = request.split(",")
     if len(req) == 4:
-        req = req.decode('utf-8')
         client_socket.send("OK")
         csvfile = open("IoT_exercise1_received_data.csv", "a")
         writer = csv.writer(csvfile, lineterminator='\n')
