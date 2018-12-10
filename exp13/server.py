@@ -17,18 +17,19 @@ f.close()
 
 def handle_client(client_socket):
     bufsize = 1024
-    while True:
-        request = client_socket.recv(bufsize)
-        req = request.split(",")
-        if len(req) == 4:
-            client_socket.send("OK")
-            file = open("IoT_exercise1_received_data.csv", "a")
-            writer = csv.writer(file)
-            writer.writerow(req)
-            file.close()
-        else:
-            client_socket.send("ERROR")
-        client_socket.close()
+    
+    request = client_socket.recv(bufsize)
+    req = request.split(",")
+    if len(req) == 4:
+        req = req.decode('utf-8')
+        client_socket.send("OK")
+        csvfile = open("IoT_exercise1_received_data.csv", "a")
+        writer = csv.writer(csvfile, lineterminator='\n')
+        writer.writerow(req)
+        csvfile.close()
+    else:
+        client_socket.send("ERROR")
+    client_socket.close()
 
         #print('[*] recv: %s' % request)
     #client_socket.send("Hey Client!\n")
