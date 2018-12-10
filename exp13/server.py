@@ -28,6 +28,7 @@ def handle_client(client_socket):
             file.close()
         else:
             client_socket.send("ERROR")
+        client.close()
 
         #print('[*] recv: %s' % request)
     #client_socket.send("Hey Client!\n")
