@@ -12,11 +12,16 @@ const char* password = "MatsumotoWay";
 const char* host = "iot.hongo.wide.ad.jp";
 const int port = 50420;
 const char* ntp_server = "ntp.nict.jp";
-unsigned long last_sync_time = 0;
 int prev_stat = LOW;
+
+const char* ntp_server_invalid = "www.gutp.jp";
+const char* ssid_invalid = "bld2_gust";
 
 #define OLED_RESET 2
 Adafruit_SSD1306 display(OLED_RESET);
+
+int limit = 0;
+boolean sync;
 
 void setup(){
     Serial.begin(115200);
@@ -32,21 +37,43 @@ void setup(){
 
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, password);
+
     while(WiFi.status() != WL_CONNECTED){
         delay(500);
         display.print(".");
+        limit += 1;
         display.display();
+        if(limit > 60){
+            display.println("failure");
+            display.display();
+            return;
+        }
     }
     display.println();
     display.display();
 
-    display.println("WiFi connected");
+    display.println("success");
     display.println("IP address: ");
     display.println(WiFi.localIP());
     display.display();
-    syncNTPtime(ntp_server);
+    delay(1000);
+
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+    display.setCursor(0, 0);
+
     display.print("Sync to ");
     display.println(ntp_server);
+    display.display();
+    delay(500);
+    sync = syncNTPtime(ntp_server);
+    if(sync == false){
+        display.println("failure");
+        display.display();
+        return;
+    }
+    display.println("success");
     display.display();
 
     char str_time[30];
@@ -58,20 +85,14 @@ void setup(){
 }
 
 void loop(){
-    delay(3000);
-    display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
-    display.setCursor(0, 0);
-    display.display();
-
+    if(limit > 60 || sync == false){
+        return;
+    }
     unsigned long t = now();
-    if(t/30 != last_sync_time/30){
+    if(t%30==0){
 
         //同期
         syncNTPtime(ntp_server);
-        last_sync_time = t;
 
         //messageの作成
         int dip = getDIPSWStatus();
@@ -83,6 +104,11 @@ void loop(){
         char message[60];
         sprintf(message, "%d,%04d-%02d-%02dT%02d:%02d:%02d,%d,%d",
             dip, year(t), month(t), day(t), hour(t), minute(t), second(t), illumi, md);
+        
+        display.clearDisplay();
+        display.setTextSize(1);
+        display.setTextColor(WHITE);
+        display.setCursor(0, 0);
         display.println(message);
         display.display();
 
@@ -95,11 +121,16 @@ void loop(){
             return;
         }
         client.print(message);
-        char* recv = client.read();
-        if(recv == "OK"){
+        char c = client.read();
+        String recv;
+        while(c != -1){
+            recv += c;
+            c = client.read();
+        }
+        if(recv.indexOf("OK")){//OK
             display.println("...OK");
             display.println();
-        }else if(recv == "ERROR"){
+        }else if(recv.indexOf("ERROR")){//ERROR
             display.println("...NG");
             display.println();
         }else if(!client.connected()){
