@@ -23,15 +23,16 @@ def handle_client(client_socket):
     request = request.decode('utf-8')
     req = request.split(",")
     if len(req) == 4:
-        client_socket.send("1")#ok
+        client_socket.send("OK")#ok
+        sleep(5)
         csvfile = open("IoT_exercise1_received_data.csv", "a")
         writer = csv.writer(csvfile, lineterminator='\n')
         writer.writerow(req)
         csvfile.close()
     else:
-        client_socket.send("2")#error
+        client_socket.send("ERROR")#error
+        sleep(5)
 
-    sleep(5)
     client_socket.close()
 
         #print('[*] recv: %s' % request)
