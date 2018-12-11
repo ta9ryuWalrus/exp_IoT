@@ -22,8 +22,7 @@ def handle_client(client_socket):
     request = client_socket.recv(bufsize)
     request = request.decode('utf-8')
     req = request.split(",")
-    req = [x for x in req if x]
-    if len(req) == 4:
+    if check(req):
         client_socket.send("OK")#ok
         sleep(5)
         csvfile = open("IoT_exercise1_received_data.csv", "a")
@@ -39,6 +38,46 @@ def handle_client(client_socket):
         #print('[*] recv: %s' % request)
     #client_socket.send("Hey Client!\n")
     #client_socket.close()
+
+def check(list):
+    if len(list) is not 4:
+        return False
+    try:
+        ID = int(list[0])
+        if ID < 0 or 3 < ID:
+            print('ID wrong')
+            return False
+    except:
+        return False
+    try:
+        timelist = list[1].split('T')
+        day = timelist[0].split('-')
+        time = timelist[1].split(':')
+        for i in range(len(day)):
+            day[i] = int(day[i])
+        for i in range(len(time)):
+            time[i] = int(time[i])
+        if day[0] < 2018 or day[1] < 1 or day[1] > 12 or day[2] < 1 or day[2] > 31:
+            print('time wrong1')
+            return False
+        if time[0] < 0 or time[0] > 24 or time[1] < 0 or time[1] > 60 or time[2] < 0 or time[2] > 60:
+            print('time wrong2')
+            return False
+    except:
+        return False
+    try:
+        lx = int(list[2])
+    except:
+        return False
+    try:
+        sensor = int(list[3])
+        if sensor is not 0 and sensor is not 1:
+            print('sensor wrong')
+            return False
+    except:
+        return False
+    print('sucess!\n')
+    return True
 
 while True:
     client, addr = server.accept()
